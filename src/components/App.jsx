@@ -29,8 +29,8 @@ export default class App extends Component {
   componentDidMount() {
     this.getGuestSession();
     this.fetchGenres();
-
-    if (this.state.ratedMovies.length !== 0) {
+    const guestSessionId = localStorage.getItem("guestSessionId");
+    if (guestSessionId) {
       this.getRatedMovies();
     }
   }
@@ -56,8 +56,8 @@ export default class App extends Component {
       const data = await response.json();
 
       this.setState({ guestSessionId: data.guest_session_id, loading: false }, () => {
-        console.log("Успех создания гостевой сессии, ключ:", this.state.guestSessionId);
-        localStorage.setItem("guestSessionId", this.state.guestSessionId);
+        console.log("Успех создания гостевой сессии, ключ:", data.guest_session_id);
+        localStorage.setItem("guestSessionId", data.guest_session_id);
       });
     } catch (e) {
       throw new Error(e.message);
@@ -129,11 +129,15 @@ export default class App extends Component {
       const response = await fetch(
         `https://api.themoviedb.org/3/guest_session/${session}/rated/movies?api_key=${apiKey}&language=en-US&sort_by=created_at.asc&page=1`,
       );
+
+      if (response.status === 404) {
+        return;
+      }
       if (!response.ok) {
         throw new Error("Failed to fetch rated movies");
       }
       const data = await response.json();
-      console.log(`getRatedMovies`, data);
+      console.log(`getRatedMovies`, data, this.state.ratedMovies);
 
       this.setState({ ratedMovies: data.results });
     } catch (err) {
